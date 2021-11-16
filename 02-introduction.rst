@@ -15,7 +15,7 @@ Simple example
    such a case, you might want to use the magic command `%timeit` instead of the
    `custom one <code/tools.py>`_ I wrote.
 
-Numpy is all about vectorization. If you are familiar with Python, this is the
+NumPy is all about vectorization. If you are familiar with Python, this is the
 main difficulty you'll face because you'll need to change your way of thinking
 and your new friends (among others) are named "vectors", "arrays", "views" or
 "ufuncs".
@@ -29,6 +29,8 @@ it's readable, but it is slow:
 
 .. code:: python
 
+   import random
+
    class RandomWalker:
        def __init__(self):
            self.position = 0
@@ -38,7 +40,7 @@ it's readable, but it is slow:
            for i in range(n):
                yield self.position
                self.position += 2*random.randint(0, 1) - 1
-           
+
    walker = RandomWalker()
    walk = [position for position in walker.walk(1000)]
 
@@ -51,7 +53,7 @@ Benchmarking gives us:
    >>> timeit("[position for position in walker.walk(n=10000)]", globals())
    10 loops, best of 3: 15.7 msec per loop
 
-       
+
 **Procedural approach**
 
 For such a simple problem, we can probably save the class definition and
@@ -59,6 +61,8 @@ concentrate only on the walk method that computes successive positions after
 each random step.
 
 .. code:: python
+
+   import random
 
    def random_walk(n):
        position = 0
@@ -80,9 +84,9 @@ we saved probably come from the inner Python object-oriented machinery.
    >>> timeit("random_walk(n=10000)", globals())
    10 loops, best of 3: 15.6 msec per loop
 
-   
+
 **Vectorized approach**
-   
+
 But we can do better using the `itertools
 <https://docs.python.org/3.6/library/itertools.html>`_ Python module that
 offers *a set of functions creating iterators for efficient looping*. If we
@@ -92,14 +96,16 @@ loop:
 
 .. code:: python
 
+   # Only available from Python 3.6
+   from itertools import accumulate
+   import random
+
    def random_walk_faster(n=1000):
-       from itertools import accumulate
-       # Only available from Python 3.6
        steps = random.choices([-1,+1], k=n)
        return [0]+list(accumulate(steps))
 
-    walk = random_walk_faster(1000)
-   
+   walk = random_walk_faster(1000)
+
 In fact, we've just *vectorized* our function. Instead of looping for picking
 sequential steps and add them to the current position, we first generated all the
 steps at once and used the `accumulate
@@ -109,25 +115,25 @@ things faster:
 
 .. code:: pycon
 
-   >>> from tools import timeit
+   >>> from tools import timeit # Reminder: run from the `code <code>`_ folder
    >>> timeit("random_walk_faster(n=10000)", globals())
    10 loops, best of 3: 2.21 msec per loop
 
 We gained 85% of computation-time compared to the previous version, not so
-bad. But the advantage of this new version is that it makes numpy vectorization
-super simple. We just have to translate itertools call into numpy ones.
+bad. But the advantage of this new version is that it makes NumPy vectorization
+super simple. We just have to translate itertools call into NumPy ones.
 
 .. code:: python
-       
+
    def random_walk_fastest(n=1000):
-       # No 's' in numpy choice (Python offers choice & choices)
+       # No 's' in NumPy choice (Python offers choice & choices)
        steps = np.random.choice([-1,+1], n)
        return np.cumsum(steps)
 
    walk = random_walk_fastest(1000)
-           
-Not too difficult, but we gained a factor 500x using numpy:
- 
+
+Not too difficult, but we gained a factor 500x using NumPy:
+
 .. code:: pycon
 
    >>> from tools import timeit
@@ -143,7 +149,7 @@ Readability vs speed
 --------------------
 
 Before heading to the next chapter, I would like to warn you about a potential
-problem you may encounter once you'll have become familiar with numpy. It is a
+problem you may encounter once you'll have become familiar with NumPy. It is a
 very powerful library and you can make wonders with it but, most of the time,
 this comes at the price of readability. If you don't comment your code at the
 time of writing, you won't be able to tell what a function is doing after a few
@@ -154,9 +160,9 @@ second (or your name is `Jaime Fernández del Río
 and you don't need to read this book).
 
 .. code:: python
-          
+
    def function_1(seq, sub):
-       return [i for i in range(len(seq) - len(sub)) if seq[i:i+len(sub)] == sub]
+       return [i for i in range(len(seq) - len(sub) +1) if seq[i:i+len(sub)] == sub]
 
    def function_2(seq, sub):
        target = np.dot(sub, sub)
@@ -166,5 +172,5 @@ and you don't need to read this book).
        return candidates[mask]
 
 As you may have guessed, the second function is the
-vectorized-optimized-faster-numpy version of the first function. It is 10 times
+vectorized-optimized-faster-NumPy version of the first function. It is 10 times
 faster than the pure Python version, but it is hardly readable.
